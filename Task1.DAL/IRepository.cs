@@ -8,9 +8,7 @@ namespace Task1.DAL
 {
     public interface IRepository<T>
     {
-        IEnumerable<T> GetAll();
-        void Add(T item);
-        void Remove(T item);
-        void Sort(IComparer<T> comparer);
+        IEnumerable<T> LoadAll();
+        void SaveAll(IEnumerable<T> items);
     }
 }

@@ -15,6 +15,7 @@ namespace Task1.PL
             Book b = new Book();
             bookService.Add(b);
             bookService.Add(b);
+            Book book = bookService.FindByTag(x => x.Title == "title");
             bookService.Remove(b);
             Console.ReadKey();
         }

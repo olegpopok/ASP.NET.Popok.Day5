@@ -14,53 +14,21 @@ namespace Task1.DAL
     public class BinaryBookRepository : IRepository<Book> 
     {
         private readonly string path;
-        private List<Book> books;
 
         public BinaryBookRepository()
         {
             string baseFolder = AppDomain.CurrentDomain.BaseDirectory;
             path = Path.Combine(baseFolder, "books");
-            books = new List<Book>();
         }
 
-        public void Add(Book book)
+        public IEnumerable<Book> LoadAll()
         {
-            LoadBooksHelper();
-            books.Add(book);
-            SaveBooksHelper();
-        }
-
-        public void Remove(Book book)
-        {
-            LoadBooksHelper();
-            books.Remove(book);
-            SaveBooksHelper();
-        }
-
-        public IEnumerable<Book> GetAll()
-        {
-            LoadBooksHelper();
-            
-            return books.AsEnumerable();
-        }
-
-        public void Sort(IComparer<Book> comparer)
-        {
-            LoadBooksHelper();
-            books.Sort(comparer);
-            SaveBooksHelper();
-        }
-
-        private void LoadBooksHelper()
-        {
-            books.Clear();
+            List<Book> books = new List<Book>();
             try
             {
-                using (Stream stream = new FileStream(path, FileMode.Open))
+                using (BinaryReader reader = new BinaryReader(File.OpenRead(path)))
                 {
-                    BinaryReader reader = new BinaryReader(stream);
-
-                    while (stream.Position < stream.Length)
+                    while (reader.BaseStream.Position < reader.BaseStream.Length)
                     {
                         Book book = new Book();
                         book.Title = reader.ReadString();
@@ -72,31 +40,41 @@ namespace Task1.DAL
                     }
                 }
             }
-            catch (FileNotFoundException e)
+            catch (FileNotFoundException)
             {
-                throw new Exception("Repository is empty!", e);
+                throw new InvalidOperationException("Repository is not found!");
             }
-            catch (IOException e)
+            catch (IOException)
             {
-                throw new Exception("Load error!", e);
+                throw new InvalidOperationException("Load error!");
             }
+            return books.AsQueryable();
         }
 
-        private void SaveBooksHelper()
+        public void SaveAll(IEnumerable<Book> books)
         {
-            using (Stream stream = new FileStream(path, FileMode.Create))
+            if (books == null)
             {
+                throw new ArgumentNullException();
+            }
 
-                BinaryWriter writer = new BinaryWriter(stream);
-                foreach (Book book in books)
+            try
+            {
+                using (BinaryWriter writer = new BinaryWriter(File.Create(path)))
                 {
-                    writer.Write(book.Title);
-                    writer.Write(book.Author);
-                    writer.Write(book.Description);
-                    writer.Write(book.Pages);
-                    writer.Write(book.YearOfPublish);
+                    foreach (Book book in books)
+                    {
+                        writer.Write(book.Title);
+                        writer.Write(book.Author);
+                        writer.Write(book.Description);
+                        writer.Write(book.Pages);
+                        writer.Write(book.YearOfPublish);
+                    }
                 }
-                writer.Flush();
+            }
+            catch (IOException)
+            {
+                throw new InvalidOperationException("Save error!");
             }
         }
     }

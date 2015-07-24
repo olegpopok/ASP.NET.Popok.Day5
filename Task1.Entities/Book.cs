@@ -46,7 +46,7 @@ namespace Task1.Entities
             }
         }
 
-        public Book() :this("author", "title", "description", 10, 868)
+        public Book() :this("title", "author", "description", 10, 868)
         { }
 
         public Book(string title, string author, string description, int pages, int yearOfPublish)
