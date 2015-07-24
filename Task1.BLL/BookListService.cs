@@ -57,7 +57,17 @@ namespace Task1.BLL
 
         public Book FindByTag(Func<Book,bool> func)
         {
-            return repository.GetAll().First(func);
+            Book result = null;
+            try
+            {
+              result = repository.GetAll().First(func); 
+            }
+            catch(Exception e)
+            {
+                logger.Info(e.Message);
+                logger.Error(e.StackTrace);
+            }
+            return result;
         }
 
         public void SortBooksByTag(IComparer<Book> comparer = null)

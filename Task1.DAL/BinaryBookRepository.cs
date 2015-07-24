@@ -13,14 +13,13 @@ namespace Task1.DAL
 {
     public class BinaryBookRepository : IRepository<Book> 
     {
-        private readonly string connectionString;
-        private Stream stream;
+        private readonly string path;
         private List<Book> books;
 
         public BinaryBookRepository()
         {
             string baseFolder = AppDomain.CurrentDomain.BaseDirectory;
-            connectionString = Path.Combine(baseFolder, "books");
+            path = Path.Combine(baseFolder, "books");
             books = new List<Book>();
         }
 
@@ -55,65 +54,50 @@ namespace Task1.DAL
         private void LoadBooksHelper()
         {
             books.Clear();
-
-            OpenConnectionHelper(FileMode.Open);
-            BinaryReader reader = new BinaryReader(stream);
-            
-            while (stream.Position < stream.Length)
+            try
             {
-                Book book = new Book();
-                book.Title = reader.ReadString();
-                book.Author = reader.ReadString();
-                book.Description = reader.ReadString();
-                book.Pages = reader.ReadInt32();
-                book.YearOfPublish = reader.ReadInt32();
-                books.Add(book);
-            }
+                using (Stream stream = new FileStream(path, FileMode.Open))
+                {
+                    BinaryReader reader = new BinaryReader(stream);
 
-            CloseConnectionHelper();
+                    while (stream.Position < stream.Length)
+                    {
+                        Book book = new Book();
+                        book.Title = reader.ReadString();
+                        book.Author = reader.ReadString();
+                        book.Description = reader.ReadString();
+                        book.Pages = reader.ReadInt32();
+                        book.YearOfPublish = reader.ReadInt32();
+                        books.Add(book);
+                    }
+                }
+            }
+            catch (FileNotFoundException e)
+            {
+                throw new Exception("Repository is empty!", e);
+            }
+            catch (IOException e)
+            {
+                throw new Exception("Load error!", e);
+            }
         }
 
         private void SaveBooksHelper()
         {
-            OpenConnectionHelper(FileMode.Create);
-
-            BinaryWriter writer = new BinaryWriter(stream);
-            foreach(Book book in books)
+            using (Stream stream = new FileStream(path, FileMode.Create))
             {
-                writer.Write(book.Title);
-                writer.Write(book.Author);
-                writer.Write(book.Description);
-                writer.Write(book.Pages);
-                writer.Write(book.YearOfPublish);    
-            }
-            writer.Flush(); 
 
-            CloseConnectionHelper();
-        }
-
-        private void OpenConnectionHelper(FileMode fileMode)
-        {
-            bool isExists = File.Exists(connectionString);
-            if (!isExists)
-            {
-               stream = File.Create(connectionString);
-            }
-            else
-            {
-                try
+                BinaryWriter writer = new BinaryWriter(stream);
+                foreach (Book book in books)
                 {
-                    stream = new FileStream(connectionString, fileMode);
+                    writer.Write(book.Title);
+                    writer.Write(book.Author);
+                    writer.Write(book.Description);
+                    writer.Write(book.Pages);
+                    writer.Write(book.YearOfPublish);
                 }
-                catch (IOException e)
-                {
-                    throw new Exception("Open stream error!", e);
-                }
+                writer.Flush();
             }
-        }
-
-        private void CloseConnectionHelper()
-        {
-            stream.Close();
         }
     }
 }
